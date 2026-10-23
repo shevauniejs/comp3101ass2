@@ -36,12 +36,12 @@ int main(int argc, char* argv[]){
 	
 	//child and wait variables
     int fchild1, fchild2;
-    int w0=0; int w1 = 0; int w2 = 0;
+	int w1 = 0; int w2 = 0;
 
     long vcuSec, rcuSec, pcuSec; //microseconds for virtual, real and profile times
    
-	fchild2 = fork();
-	if(fchild2==0){
+	fchild1 = fork();
+	if(fchild1==0){
 		struct itimerval virt;
     	struct itimerval real;
     	struct itimerval prof;
@@ -49,13 +49,13 @@ int main(int argc, char* argv[]){
     	signal(SIGVTALRM,vSec);
     	signal(SIGALRM,rSec);
     	signal(SIGPROF,pSec);
-		printf("[Child 2]\n"); 
-		superInit(&child2Value, &virt, &real, &prof, &vcuSec, &rcuSec, &pcuSec);
+		printf("[Child 1]\n"); 
+		superInit(&child1Value, &virt, &real, &prof, &vcuSec, &rcuSec, &pcuSec);
 	}
-	if(fchild2>0){
-		w0=waitpid(fchild2,NULL,0);
-		fchild1=fork();
-		if(fchild1==0){
+	if(fchild1>0){
+		w1=waitpid(fchild1,NULL,0);
+		fchild2=fork();
+		if(fchild2==0){
 			struct itimerval virt;
     		struct itimerval real;
     		struct itimerval prof;
@@ -63,12 +63,11 @@ int main(int argc, char* argv[]){
     		signal(SIGVTALRM,vSec);
     		signal(SIGALRM,rSec);
     		signal(SIGPROF,pSec);
-			printf("[Child 1]\n"); 
-			superInit(&child1Value, &virt, &real, &prof, &vcuSec, &rcuSec, &pcuSec);
+			printf("[Child 2]\n"); 
+			superInit(&child2Value, &virt, &real, &prof, &vcuSec, &rcuSec, &pcuSec);
 		}
 		else{
-			w1=waitpid(fchild1,NULL,0);
-			//w2=waitpid(fchild2,NULL,0);
+			w2=waitpid(fchild2,NULL,0);
 			struct itimerval virt;
     		struct itimerval real;
     		struct itimerval prof;
