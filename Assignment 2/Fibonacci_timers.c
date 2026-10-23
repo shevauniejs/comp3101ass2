@@ -32,25 +32,52 @@ int main(int argc, char* argv[]){
     int parentValue = atoi(argv[1]);
     int child1Value = atoi(argv[2]);
     int child2Value = atoi(argv[3]);
-
+	
+	//child and wait variables
     int fchild1, fchild2;
     int w1 = 0; int w2 = 0;
-	
-    //int fibVal;
-    long vcuSec, rcuSec, pcuSec; 
+
+    long vcuSec, rcuSec, pcuSec; //microseconds for virtual, real and profile times
    
-	//fchild2 = fork();
-	//if(fchild2==0){}
-    struct itimerval virt;
-    struct itimerval real;
-    struct itimerval prof;
+	fchild2 = fork();
+	if(fchild2==0){
+		struct itimerval virt;
+    	struct itimerval real;
+    	struct itimerval prof;
 
+    	signal(SIGVTALRM,vSec);
+    	signal(SIGALRM,rSec);
+    	signal(SIGPROF,pSec);
+		printf("[Child 2]\n"); 
+		superInit(&child2Value, &virt, &real, &prof, &vcuSec, &rcuSec, &pcuSec);
+	}
+	if(fchild2>0){
+		fchild1=fork();
+		if(fchild1==0){
+			struct itimerval virt;
+    		struct itimerval real;
+    		struct itimerval prof;
 
-    signal(SIGVTALRM,vSec);
-    signal(SIGALRM,rSec);
-    signal(SIGPROF,pSec);
-	
-	superInit(&parentValue, &virt, &real, &prof, &vcuSec, &rcuSec, &pcuSec);
+    		signal(SIGVTALRM,vSec);
+    		signal(SIGALRM,rSec);
+    		signal(SIGPROF,pSec);
+			printf("[Child 1]\n"); 
+			superInit(&child1Value, &virt, &real, &prof, &vcuSec, &rcuSec, &pcuSec);
+		}
+		else{
+			waitpid(fchild2,NULL,0);
+			waitpid(fchild1,NULL,0);
+			struct itimerval virt;
+    		struct itimerval real;
+    		struct itimerval prof;
+
+    		signal(SIGVTALRM,vSec);
+    		signal(SIGALRM,rSec);
+    		signal(SIGPROF,pSec);
+			printf("[Parent]\n"); 
+			superInit(&parentValue, &virt, &real, &prof, &vcuSec, &rcuSec, &pcuSec);
+		}
+	}
 	return 1;
 }
 /**
@@ -117,7 +144,7 @@ void superInit(int* fibonacci, struct itimerval* v, struct itimerval* r, struct 
 	setAllIntervals(v,r,p);
 	setAlliTimers(v,r,p);
 	int fibVal = fibo(*fibonacci);
-    printf("[Parent] fibonacci(%d) = %d:  \n", *fibonacci, fibVal);
+    printf("Fibonacci(%d) = %d:  \n", *fibonacci, fibVal);
 	
 	getAlliTimers(v,r, p);
 	calcMicroSecs(vu, ru, pu, v, r, p);
