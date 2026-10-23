@@ -4,52 +4,53 @@
 #include <signal.h>
 #include <unistd.h>
 
-int fib(int i);
-void setIntervals(struct itimerval* v, struct itimerval* r, struct itimerval* p);
-void vSec();
-void rSec();
-void pSec();
+int fibo(int i);
+void setAllIntervals(struct itimerval* v, struct itimerval* r, struct itimerval* p);
+void setAlliTimers(struct itimerval* v, struct itimerval* r, struct itimerval* p);
+void getAlliTimers(struct itimerval* v, struct itimerval* r, struct itimerval* p);
+void calcMicroSecs(long* vs, long* rs, long* ps, struct itimerval* v, struct itimerval* r, struct itimerval* p);
+void vSec(int sig);
+void rSec(int sig);
+void pSec(int sig);
 
 //void setIntervals(struct times R, struct times V, struct times  );
 //kernel = profile-virtual
 long vcSec, rcSec, pcSec;
 
 int main(int argc, char* argv[]){
+    //Values to supply to fibo function from shell
     int parentValue = atoi(argv[1]);
-    int child_1Value = atoi(argv[2]);
-    int child_2Value = atoi(argv[3]);
-    int fibVal, w1, w2;
-    int fchild1, fchild2;
+    int child1Value = atoi(argv[2]);
+    int child2Value = atoi(argv[3]);
 
+    int fchild1, fchild2;
+    int w1 = 0; int w2 = 0;
+	
+    int fibVal;
+    long vcuSec, rcuSec, pcuSec; 
+   
     struct itimerval virt;
     struct itimerval real;
     struct itimerval prof;
+    
 
-    long vcuSec, rcuSec, pcuSec;
+    setAllIntervals(&virt,&real,&prof);
+	
 
-    w1,w2 = 0,0;
-
-    setIntervals(&virt,&real,&prof);
-
-    setitimer(ITIMER_VIRTUAL,&virt,NULL);
-    setitimer(ITIMER_REAL,&real,NULL);
-    setitimer(ITIMER_PROF,&prof,NULL);
 
     signal(SIGVTALRM,vSec);
     signal(SIGALRM,rSec);
     signal(SIGPROF,pSec);
-
-    fchild2 = fork();
-
-    fibVal = fib(parentValue);
+	
+	setAlliTimers(&virt,&real,&prof);
+	
+	fibVal = fibo(parentValue);
     printf("[Parent] fibonacci(%d) = %d:  \n", parentValue, fibVal);
-    getitimer(ITIMER_VIRTUAL,&virt);
-    getitimer(ITIMER_REAL,&real);
-    getitimer(ITIMER_PROF,&prof);
+	
+	getAlliTimers(&virt,&real, &prof);
+	calcMicroSecs(&vcuSec, &rcuSec, &pcuSec, &virt, &real, &prof);
 
-    rcuSec = 1000000-real.it_value.tv_usec;
-    vcuSec = 1000000-virt.it_value.tv_usec;
-    pcuSec = 1000000-prof.it_value.tv_usec;
+
 
     //getitimer(ITIMER_VIRTUAL, &virt);
     printf("User Time (Virtual Time): %ld seconds %ld microseconds\n", vcSec, vcuSec);
@@ -58,8 +59,10 @@ int main(int argc, char* argv[]){
     printf("Kernel Time: %ld seconds %ld microseconds\n\n", pcSec-vcSec, pcuSec-vcuSec);
     return 1;
 }
-
-void setIntervals(struct itimerval* v, struct itimerval* r, struct itimerval* p){
+/**
+Set intervals and values for all itimervals
+*/
+void setAllIntervals(struct itimerval* v, struct itimerval* r, struct itimerval* p){
     v->it_interval.tv_sec = 1;
     v->it_interval.tv_usec = 0;
     v->it_value.tv_sec = 1;
@@ -76,19 +79,52 @@ void setIntervals(struct itimerval* v, struct itimerval* r, struct itimerval* p)
     p->it_value.tv_usec = 0;
 }
 
-void vSec(){
+/**
+Set timer for virtual, real and profile times
+*/
+void setAlliTimers(struct itimerval* v, struct itimerval* r, struct itimerval* p){
+    setitimer(ITIMER_VIRTUAL,v,NULL);
+    setitimer(ITIMER_REAL,r,NULL);
+    setitimer(ITIMER_PROF,p,NULL);
+}
+
+/**
+Get values of virtual, real and profile times microseconds so we can calculate
+*/
+void getAlliTimers(struct itimerval* v, struct itimerval* r, struct itimerval* p){
+    getitimer(ITIMER_VIRTUAL,v);
+    getitimer(ITIMER_REAL,r);
+    getitimer(ITIMER_PROF,p);
+}
+
+/**
+Calculate number of microseconds for virtual, real and profile times
+*/
+void calcMicroSecs(long* vs, long* rs, long* ps, struct itimerval* v, struct itimerval* r, struct itimerval* p){
+    *rs= 1000000-r->it_value.tv_usec;
+    *vs = 1000000-v->it_value.tv_usec;
+    *ps = 1000000-p->it_value.tv_usec;
+}
+			  
+/**
+Count seconds for virtual, real, and profile times
+*/
+void vSec(int sig){
     vcSec++;
     }
 
-void rSec(){
+void rSec(int sig){
     rcSec++;
     }
 
-void pSec(){
+void pSec(int sig){
     pcSec++;
 }
-//as 1 second pass, raise signal for real time alarm and increment seconds,
-int fib(int i){
+
+/**
+Fibonacci function
+*/
+int fibo(int i){
    if(i==0){
        return 0;
    }
@@ -96,6 +132,6 @@ int fib(int i){
        return 1;
    }
    else{
-        return fib(i-1) + fib(i-2);
+        return fibo(i-1) + fibo(i-2);
    }
 }
