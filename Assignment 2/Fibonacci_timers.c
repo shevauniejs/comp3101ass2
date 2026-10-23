@@ -9,6 +9,7 @@ Assigmnent Number: 02
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/time.h>
+#include <sys/wait.h>
 #include <signal.h>
 #include <unistd.h>
 
@@ -35,7 +36,7 @@ int main(int argc, char* argv[]){
 	
 	//child and wait variables
     int fchild1, fchild2;
-    int w1 = 0; int w2 = 0;
+    int w0=0; int w1 = 0; int w2 = 0;
 
     long vcuSec, rcuSec, pcuSec; //microseconds for virtual, real and profile times
    
@@ -52,6 +53,7 @@ int main(int argc, char* argv[]){
 		superInit(&child2Value, &virt, &real, &prof, &vcuSec, &rcuSec, &pcuSec);
 	}
 	if(fchild2>0){
+		w0=waitpid(fchild2,NULL,0);
 		fchild1=fork();
 		if(fchild1==0){
 			struct itimerval virt;
@@ -65,8 +67,8 @@ int main(int argc, char* argv[]){
 			superInit(&child1Value, &virt, &real, &prof, &vcuSec, &rcuSec, &pcuSec);
 		}
 		else{
-			waitpid(fchild2,NULL,0);
-			waitpid(fchild1,NULL,0);
+			w1=waitpid(fchild1,NULL,0);
+			//w2=waitpid(fchild2,NULL,0);
 			struct itimerval virt;
     		struct itimerval real;
     		struct itimerval prof;
